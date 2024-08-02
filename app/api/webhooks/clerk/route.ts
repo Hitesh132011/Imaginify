@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response("Error occured -- no svix headers", {
+    return new Response("Error occurred -- no svix headers", {
       status: 400,
     });
   }
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     }) as WebhookEvent;
   } catch (err) {
     console.error("Error verifying webhook:", err);
-    return new Response("Error occured", {
+    return new Response("Error occurred", {
       status: 400,
     });
   }
@@ -57,17 +57,24 @@ export async function POST(req: Request) {
   const { id } = evt.data;
   const eventType = evt.type;
 
+  // Ensure id is defined and assert its type
+  if (!id) {
+    return new Response("Error occurred -- no user ID", {
+      status: 400,
+    });
+  }
+
   // CREATE
   if (eventType === "user.created") {
-    const { id, email_addresses, image_url, first_name, last_name, username } = evt.data;
+    const { email_addresses, image_url, first_name, last_name, username } = evt.data;
 
     const user = {
       clerkId: id,
-      email: email_addresses[0].email_address,
-      username: username!,
-      firstName: first_name ?? '',  // Default to empty string if null
-      lastName: last_name ?? '',    // Default to empty string if null
-      photo: image_url,
+      email: email_addresses[0]?.email_address ?? '', // Default to empty string if null
+      username: username ?? '', // Default to empty string if null
+      firstName: first_name ?? '', // Default to empty string if null
+      lastName: last_name ?? '', // Default to empty string if null
+      photo: image_url ?? '', // Default to empty string if null
     };
 
     const newUser = await createUser(user);
@@ -86,25 +93,29 @@ export async function POST(req: Request) {
 
   // UPDATE
   if (eventType === "user.updated") {
-    const { id, image_url, first_name, last_name, username } = evt.data;
+    const { image_url, first_name, last_name, username } = evt.data;
 
     const user = {
-      firstName: first_name ?? '',  // Default to empty string if null
-      lastName: last_name ?? '',    // Default to empty string if null
-      username: username ?? '',     // Default to empty string if null
-      photo: image_url,
+      firstName: first_name ?? '', // Default to empty string if null
+      lastName: last_name ?? '', // Default to empty string if null
+      username: username ?? '', // Default to empty string if null
+      photo: image_url ?? '', // Default to empty string if null
     };
 
-    const updatedUser = await updateUser(id, user);
+    // Assert id as string
+    const idString: string = id; 
+
+    const updatedUser = await updateUser(idString, user);
 
     return NextResponse.json({ message: "OK", user: updatedUser });
   }
 
   // DELETE
   if (eventType === "user.deleted") {
-    const { id } = evt.data;
+    // Assert id as string
+    const idString: string = id;
 
-    const deletedUser = await deleteUser(id!);
+    const deletedUser = await deleteUser(idString);
 
     return NextResponse.json({ message: "OK", user: deletedUser });
   }
