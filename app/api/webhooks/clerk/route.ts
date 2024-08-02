@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       case "user.created": {
         const { email_addresses, image_url, first_name, last_name, username } = evt.data;
 
-        // Ensure clerkId is defined
+        // Ensure all required fields are defined
         if (!id) {
           throw new Error("User ID is missing from the webhook event");
         }
@@ -70,8 +70,10 @@ export async function POST(req: Request) {
           photo: image_url || '', // Ensure photo is a string
         };
 
+        // Create user
         const newUser = await createUser(user);
 
+        // Set public metadata
         if (newUser) {
           await clerkClient.users.updateUserMetadata(id, {
             publicMetadata: {
@@ -93,12 +95,14 @@ export async function POST(req: Request) {
           photo: image_url || '', // Ensure photo is a string
         };
 
+        // Update user
         const updatedUser = await updateUser(id, user);
 
         return NextResponse.json({ message: "OK", user: updatedUser });
       }
 
       case "user.deleted": {
+        // Delete user
         const deletedUser = await deleteUser(id);
 
         return NextResponse.json({ message: "OK", user: deletedUser });
