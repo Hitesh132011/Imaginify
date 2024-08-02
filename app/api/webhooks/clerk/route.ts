@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-"use strict"; // Correct usage is "use strict", not "use"
+"use strict";
 
 import { clerkClient } from "@clerk/nextjs/server";
 import { WebhookEvent } from "@clerk/nextjs/server";
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
-    throw new Error("Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local");
+    return NextResponse.json({ error: "Missing WEBHOOK_SECRET in environment variables" }, { status: 500 });
   }
 
   // Extract headers
@@ -62,8 +62,8 @@ export async function POST(req: Request) {
         }
 
         const user = {
-          clerkId: id, // TypeScript should now recognize this as a string
-          email: email_addresses[0].email_address,
+          clerkId: id, // Ensure this is a string
+          email: email_addresses[0]?.email_address || '', // Ensure email is a string
           username: username || '', // Ensure username is a string
           firstName: first_name || '', // Ensure firstName is a string
           lastName: last_name || '', // Ensure lastName is a string
