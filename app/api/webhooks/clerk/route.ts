@@ -51,15 +51,15 @@ export async function POST(req: Request) {
   const { id } = evt.data;
   const eventType = evt.type;
 
+  // Ensure id is a string
+  if (!id || typeof id !== 'string') {
+    return NextResponse.json({ error: "Invalid or missing user ID" }, { status: 400 });
+  }
+
   try {
     switch (eventType) {
       case "user.created": {
         const { email_addresses, image_url, first_name, last_name, username } = evt.data;
-
-        // Ensure all required fields are defined
-        if (!id) {
-          throw new Error("User ID is missing from the webhook event");
-        }
 
         const user = {
           clerkId: id, // Ensure this is a string
