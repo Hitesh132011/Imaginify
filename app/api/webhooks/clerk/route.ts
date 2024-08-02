@@ -1,6 +1,4 @@
 /* eslint-disable camelcase */
-"use strict";
-
 import { clerkClient } from "@clerk/nextjs/server";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
@@ -10,33 +8,38 @@ import { Webhook } from "svix";
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.action";
 
 export async function POST(req: Request) {
-  // Retrieve the webhook secret from environment variables
+  // You can find this in the Clerk Dashboard -> Webhooks -> choose the webhook
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
-    return NextResponse.json({ error: "Missing WEBHOOK_SECRET in environment variables" }, { status: 500 });
+    throw new Error(
+      "Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local"
+    );
   }
 
-  // Extract headers
+  // Get the headers
   const headerPayload = headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");
 
-  // Validate headers
+  // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return NextResponse.json({ error: "Missing svix headers" }, { status: 400 });
+    return new Response("Error occured -- no svix headers", {
+      status: 400,
+    });
   }
 
-  // Retrieve and stringify the request body
+  // Get the body
   const payload = await req.json();
   const body = JSON.stringify(payload);
 
-  // Initialize Svix webhook verification
+  // Create a new Svix instance with your secret.
   const wh = new Webhook(WEBHOOK_SECRET);
 
   let evt: WebhookEvent;
 
+  // Verify the payload with the headers
   try {
     evt = wh.verify(body, {
       "svix-id": svix_id,
@@ -45,76 +48,69 @@ export async function POST(req: Request) {
     }) as WebhookEvent;
   } catch (err) {
     console.error("Error verifying webhook:", err);
-    return NextResponse.json({ error: "Error verifying webhook" }, { status: 400 });
+    return new Response("Error occured", {
+      status: 400,
+    });
   }
 
+  // Get the ID and type
   const { id } = evt.data;
   const eventType = evt.type;
 
-  // Ensure id is a string
-  if (!id || typeof id !== 'string') {
-    return NextResponse.json({ error: "Invalid or missing user ID" }, { status: 400 });
-  }
+  // CREATE
+  if (eventType === "user.created") {
+    const { id, email_addresses, image_url, first_name, last_name, username } = evt.data;
 
-  try {
-    switch (eventType) {
-      case "user.created": {
-        const { email_addresses, image_url, first_name, last_name, username } = evt.data;
+    const user = {
+      clerkId: id,
+      email: email_addresses[0].email_address,
+      username: username!,
+      firstName: first_name ?? '',  // Default to empty string if null
+      lastName: last_name ?? '',    // Default to empty string if null
+      photo: image_url,
+    };
 
-        const user = {
-          clerkId: id, // Ensure this is a string
-          email: email_addresses[0]?.email_address || '', // Ensure email is a string
-          username: username || '', // Ensure username is a string
-          firstName: first_name || '', // Ensure firstName is a string
-          lastName: last_name || '', // Ensure lastName is a string
-          photo: image_url || '', // Ensure photo is a string
-        };
+    const newUser = await createUser(user);
 
-        // Create user
-        const newUser = await createUser(user);
-
-        // Set public metadata
-        if (newUser) {
-          await clerkClient.users.updateUserMetadata(id, {
-            publicMetadata: {
-              userId: newUser._id,
-            },
-          });
-        }
-
-        return NextResponse.json({ message: "OK", user: newUser });
-      }
-
-      case "user.updated": {
-        const { image_url, first_name, last_name, username } = evt.data;
-
-        const user = {
-          firstName: first_name || '', // Ensure firstName is a string
-          lastName: last_name || '', // Ensure lastName is a string
-          username: username || '', // Ensure username is a string
-          photo: image_url || '', // Ensure photo is a string
-        };
-
-        // Update user
-        const updatedUser = await updateUser(id, user);
-
-        return NextResponse.json({ message: "OK", user: updatedUser });
-      }
-
-      case "user.deleted": {
-        // Delete user
-        const deletedUser = await deleteUser(id);
-
-        return NextResponse.json({ message: "OK", user: deletedUser });
-      }
-
-      default: {
-        console.log(`Unhandled event type: ${eventType}`);
-        return NextResponse.json({ message: "Unhandled event type" }, { status: 400 });
-      }
+    // Set public metadata
+    if (newUser) {
+      await clerkClient.users.updateUserMetadata(id, {
+        publicMetadata: {
+          userId: newUser._id,
+        },
+      });
     }
-  } catch (error) {
-    console.error(`Error processing event ${eventType}:`, error);
-    return NextResponse.json({ error: "Error processing event" }, { status: 500 });
+
+    return NextResponse.json({ message: "OK", user: newUser });
   }
+
+  // UPDATE
+  if (eventType === "user.updated") {
+    const { id, image_url, first_name, last_name, username } = evt.data;
+
+    const user = {
+      firstName: first_name ?? '',  // Default to empty string if null
+      lastName: last_name ?? '',    // Default to empty string if null
+      username: username ?? '',     // Default to empty string if null
+      photo: image_url,
+    };
+
+    const updatedUser = await updateUser(id, user);
+
+    return NextResponse.json({ message: "OK", user: updatedUser });
+  }
+
+  // DELETE
+  if (eventType === "user.deleted") {
+    const { id } = evt.data;
+
+    const deletedUser = await deleteUser(id!);
+
+    return NextResponse.json({ message: "OK", user: deletedUser });
+  }
+
+  console.log(`Webhook with an ID of ${id} and type of ${eventType}`);
+  console.log("Webhook body:", body);
+
+  return new Response("", { status: 200 });
 }
