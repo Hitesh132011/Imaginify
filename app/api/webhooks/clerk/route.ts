@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
-import { clerkClient } from "@clerk/nextjs/server";
-import { WebhookEvent } from "@clerk/nextjs/server";
+import { clerkClient, getAuth, buildClerkProps } from "@clerk/nextjs/server";
+import { GetServerSideProps } from "next";import { WebhookEvent } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response("Error occurred -- no svix headers", {
+    return new Response("Error occured -- no svix headers", {
       status: 400,
     });
   }
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     }) as WebhookEvent;
   } catch (err) {
     console.error("Error verifying webhook:", err);
-    return new Response("Error occurred", {
+    return new Response("Error occured", {
       status: 400,
     });
   }
@@ -57,27 +57,20 @@ export async function POST(req: Request) {
   const { id } = evt.data;
   const eventType = evt.type;
 
-  // Ensure id is defined and assert its type
-  if (!id) {
-    return new Response("Error occurred -- no user ID", {
-      status: 400,
-    });
-  }
-
   // CREATE
   if (eventType === "user.created") {
-    const { email_addresses, image_url, first_name, last_name, username } = evt.data;
+    const { id, email_addresses, image_url, first_name, last_name, username } = evt.data;
 
     const user = {
       clerkId: id,
-      email: email_addresses[0]?.email_address ?? '', // Default to empty string if null
-      username: username ?? '', // Default to empty string if null
-      firstName: first_name ?? '', // Default to empty string if null
-      lastName: last_name ?? '', // Default to empty string if null
-      photo: image_url ?? '', // Default to empty string if null
+      email: email_addresses[0].email_address,
+      username: username!,
+      firstName: first_name,
+      lastName: last_name,
+      photo: image_url,
     };
 
-    const newUser = await createUser(user);
+    const newUser = await createUser({user});
 
     // Set public metadata
     if (newUser) {
@@ -93,34 +86,30 @@ export async function POST(req: Request) {
 
   // UPDATE
   if (eventType === "user.updated") {
-    const { image_url, first_name, last_name, username } = evt.data;
+    const { id, image_url, first_name, last_name, username } = evt.data;
 
     const user = {
-      firstName: first_name ?? '', // Default to empty string if null
-      lastName: last_name ?? '', // Default to empty string if null
-      username: username ?? '', // Default to empty string if null
-      photo: image_url ?? '', // Default to empty string if null
+      firstName: first_name,
+      lastName: last_name,
+      username: username!,
+      photo: image_url,
     };
 
-    // Assert id as string
-    const idString: string = id; 
-
-    const updatedUser = await updateUser(idString, user);
+    const updatedUser = await updateUser(id, user);
 
     return NextResponse.json({ message: "OK", user: updatedUser });
   }
 
   // DELETE
   if (eventType === "user.deleted") {
-    // Assert id as string
-    const idString: string = id;
+    const { id } = evt.data;
 
-    const deletedUser = await deleteUser(idString);
+    const deletedUser = await deleteUser(id!);
 
     return NextResponse.json({ message: "OK", user: deletedUser });
   }
 
-  console.log(`Webhook with an ID of ${id} and type of ${eventType}`);
+  console.log(`Webhook with and ID of ${id} and type of ${eventType}`);
   console.log("Webhook body:", body);
 
   return new Response("", { status: 200 });
