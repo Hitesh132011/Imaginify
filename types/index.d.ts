@@ -20,52 +20,52 @@ declare type CreateUserParams = {
   // ====== IMAGE PARAMS
   declare type AddImageParams = {
     image: {
-      title: string?;
-      publicId: string?;
-      transformationType: string?;
+      title: string;
+      publicId: string;
+      transformationType: string;
       width: number;
       height: number;
       config: any;
-      secureURL: string?;
-      transformationURL: string?;
+      secureURL: string;
+      transformationURL: string;
       aspectRatio: string | undefined;
       prompt: string | undefined;
       color: string | undefined;
     };
-    userId: string?;
-    path: string?;
+    userId: string;
+    path: string;
   };
   
   declare type UpdateImageParams = {
     image: {
-      _id: string?;
-      title: string?;
-      publicId: string?;
-      transformationType: string?;
+      _id: string;
+      title: string;
+      publicId: string;
+      transformationType: string;
       width: number;
       height: number;
       config: any;
-      secureURL: string?;
-      transformationURL: string?;
+      secureURL: string;
+      transformationURL: string;
       aspectRatio: string | undefined;
       prompt: string | undefined;
       color: string | undefined;
     };
-    userId: string?;
-    path: string?;
+    userId: string;
+    path: string;
   };
   
   declare type Transformations = {
     restore?: boolean;
     fillBackground?: boolean;
     remove?: {
-      prompt: string?;
+      prompt: string;
       removeShadow?: boolean;
       multiple?: boolean;
     };
     recolor?: {
-      prompt?: string?;
-      to: string?;
+      prompt?: string;
+      to: string;
       multiple?: boolean;
     };
     removeBackground?: boolean;
@@ -73,18 +73,18 @@ declare type CreateUserParams = {
   
   // ====== TRANSACTION PARAMS
   declare type CheckoutTransactionParams = {
-    plan: string?;
+    plan: string;
     credits: number;
     amount: number;
-    buyerId: string?;
+    buyerId: string;
   };
   
   declare type CreateTransactionParams = {
-    stripeId: string?;
+    stripeId: string;
     amount: number;
     credits: number;
-    plan: string?;
-    buyerId: string?;
+    plan: string;
+    buyerId: string;
     createdAt: Date;
   };
   
@@ -97,19 +97,19 @@ declare type CreateUserParams = {
   
   // ====== URL QUERY PARAMS
   declare type FormUrlQueryParams = {
-    searchParams: string?;
-    key: string?;
+    searchParams: string;
+    key: string;
     value: string | number | null;
   };
   
   declare type UrlQueryParams = {
-    params: string?;
-    key: string?;
+    params: string;
+    key: string;
     value: string | null;
   };
   
   declare type RemoveUrlQueryParams = {
-    searchParams: string?;
+    searchParams: string;
     keysToRemove: string[];
   };
   
