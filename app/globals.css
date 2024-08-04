@@ -289,7 +289,7 @@
   }
 
   .media-uploader_cta {
-    @apply flex-center flex h-72 cursor-pointer flex-col gap-5 rounded-[16px] border border-dashed bg-purple-100/20 shadow-inner;
+    @apply flex-center flex h-72 cursor-pointer flex-col gap-10 rounded-[16px] border border-dashed bg-purple-100/20 shadow-inner;
   }
 
   .media-uploader_cta-image {

@@ -36,7 +36,7 @@ export const navLinks = [
     },
     {
       label: "Buy Credits",
-      route: "/credits",
+      route: "/credit",
       icon: "/assets/icons/bag.svg",
     },
   ];

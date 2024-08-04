@@ -23,7 +23,7 @@ export default function RootLayout({
             <RedirectToSignIn />
           </SignedOut>
           <SignedIn>
-            <UserButton />
+          
             {children}
           </SignedIn>
         </body>
