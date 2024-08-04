@@ -12,12 +12,11 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { transformationTypes } from "@/constants";
-import { IImage } from "@/lib/database/models/Image.model"
+import { IImage } from "@/lib/database/models/Image.model";
 import { formUrlQuery } from "@/lib/utils";
 
 import { Button } from "../ui/button";
-
-import { Search } from "./Search";
+import { Search } from "./Search"; // Adjust the import path as needed
 
 export const Collection = ({
   hasSearch = false,
@@ -56,7 +55,7 @@ export const Collection = ({
       {images.length > 0 ? (
         <ul className="collection-list">
           {images.map((image) => (
-            <Card image={image} key={image._id} />
+            <Card image={image} key={String(image._id)} />
           ))}
         </ul>
       ) : (
